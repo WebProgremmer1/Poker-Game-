@@ -1,8 +1,18 @@
 # gradio as gr 
-import heapq, random
+import random
 
-num_cards = int(input('How many cards you would like to have?'))
+num_cards = int(input('How many cards you would like to have? (No values higher than 14)'))
+while True:    
+    if num_cards >= 14:
+        num_cards=int(input("Too high, number should be lower than 14!"))  
+    else:
+        break
 
+# if cards > 14:
+#     while cards < 14:
+#         cards = random.randint(2, num_cards)
+# else:
+#     cards = random.randint(2, num_cards)
 
 
 
@@ -18,6 +28,14 @@ for i in range(1, num_cards+1):
             arr.append(cards_suits)
             break
 print(arr)
+if cards > 14:
+    while cards < 14:
+        cards = random.randint(2, num_cards)
+else:
+    cards = random.randint(2, num_cards)
+
+
+
 
 def quicksort(arr, left, right):
     if left < right:
@@ -37,10 +55,8 @@ def partition(arr, left, right):
     pivot = arr[right]
 
     while True:
-        # move i to first element > pivot
         while i <= j and rank(arr[i]) <= rank(pivot):
             i += 1
-        # move j to last element <= pivot (strictly greater keeps right side)
         while j >= i and rank(arr[j]) > rank(pivot):
             j -= 1
 
@@ -57,4 +73,17 @@ def partition(arr, left, right):
 
 
 quicksort(arr, 0, len(arr) - 1)
+print(arr)
+
+mapping = {'11': 'J', '12': 'Q', '13': 'K', '14': 'A'}
+
+for idx, card in enumerate(arr):
+    j = 0
+    while j < len(card) and card[j].isdigit():
+        j += 1
+    rank = card[:j]
+    suit = card[j:]
+    if rank in mapping:
+        arr[idx] = mapping[rank] + suit
+
 print(arr)
