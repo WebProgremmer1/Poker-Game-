@@ -1,26 +1,26 @@
 # gradio as gr 
 import random
 
-num_cards = int(input('How many cards you would like to have? (No values higher than 14)'))
+
+# In case, if input is incorrect x``
 while True:    
-    if num_cards >= 14:
-        num_cards=int(input("Too high, number should be lower than 14!"))  
-    else:
+    try:
+        num_cards = int(input('How many cards you would like to have? (No values higher than 52)'))
+        if num_cards > 52:
+            num_cards=int(input('A standard desk has 52 desks'))  
         break
-
-# if cards > 14:
-#     while cards < 14:
-#         cards = random.randint(2, num_cards)
-# else:
-#     cards = random.randint(2, num_cards)
+    
+    except ValueError as invalid:
+        print(f'There is not such card {invalid}')
 
 
-
+#Random suit and number
 arr =[]
 lst_suits = ["♠", "♥", "♦", "♣"]            
 for i in range(1, num_cards+1):
     while True:
-        cards = random.randint(2, num_cards)
+        cards = random.randint(2, 14)
+        # cards = random.randint(2, num_cards)
         suits_index = random.sample(range(0, 4), 1)[0]
         suits = lst_suits[suits_index]
         cards_suits = (str(cards) + suits)
@@ -28,15 +28,8 @@ for i in range(1, num_cards+1):
             arr.append(cards_suits)
             break
 print(arr)
-if cards > 14:
-    while cards < 14:
-        cards = random.randint(2, num_cards)
-else:
-    cards = random.randint(2, num_cards)
 
-
-
-
+# Quicksort
 def quicksort(arr, left, right):
     if left < right:
         partition_pos = partition(arr, left, right)
@@ -77,6 +70,7 @@ print(arr)
 
 mapping = {'11': 'J', '12': 'Q', '13': 'K', '14': 'A'}
 
+# Trasform from number to 'J', 'Q', 'K', 'A'
 for idx, card in enumerate(arr):
     j = 0
     while j < len(card) and card[j].isdigit():
@@ -87,3 +81,7 @@ for idx, card in enumerate(arr):
         arr[idx] = mapping[rank] + suit
 
 print(arr)
+
+
+# in the end, make tests through AI 
+# unittest, pytest
