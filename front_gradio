@@ -1,0 +1,25 @@
+import gradio as gr 
+
+custom_theme = gr.themes.Soft(primary_hue="red").set(
+    color_accent="#9C0505",
+)
+def demo_function(text):
+    return text
+
+def clear_function(text):
+    return '', ''
+    
+with gr.Blocks(fill_height=True, theme=custom_theme) as demo:
+    gr.Markdown("QuickSort Cards Addition ♠, ♥, ♦, ♣")
+    with gr.Row():
+        with gr.Column():
+            input_text = gr.components.Textbox(label ='Enter number of cards (up to 52)')
+            with gr.Row():
+                submit = gr.components.Button(value = 'Shuffle', variant ='primary')
+        
+        output_text = gr.components.Textbox(lines=3, label ='Shuffled desk')
+
+    submit.click(demo_function, [input_text], [output_text])
+
+if __name__ == '__main__':
+    demo.launch()
