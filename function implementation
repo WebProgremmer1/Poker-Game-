@@ -1,0 +1,101 @@
+import gradio as gr
+import random 
+
+def check_input(num_cards):
+        num = int(num_cards)   
+        if 1 <= num <= 52:
+            return num
+        else:
+            return 0 
+
+def random_cards(num_cards):
+    arr =[]
+    lst_suits = ["♠", "♥", "♦", "♣"]            
+    for i in range(1, num_cards+1):
+        while True:
+            cards = random.randint(2, 14)
+            # cards = random.randint(2, num_cards)
+            suits_index = random.sample(range(0, 4), 1)[0]
+            suits = lst_suits[suits_index]
+            cards_suits = (str(cards) + suits)
+            if cards_suits not in arr:
+                arr.append(cards_suits)
+                break
+    return arr
+
+
+
+def quicksort(arr, left, right):
+    if left < right:
+        partition_pos = partition(arr, left, right)
+        quicksort(arr, left, partition_pos - 1)
+        quicksort(arr, partition_pos + 1, right)
+    
+    return arr
+
+def rank(card):
+    k = 0
+    while k < len(card) and card[k].isdigit():
+        k += 1
+    return int(card[:k])
+
+def partition(arr, left, right):
+    i = left
+    j = right - 1
+    pivot = arr[right]
+
+    while True:
+        while i <= j and rank(arr[i]) <= rank(pivot):
+            i += 1
+        while j >= i and rank(arr[j]) > rank(pivot):
+            j -= 1
+
+        if i >= j:
+            break
+
+        arr[i], arr[j] = arr[j], arr[i]
+        i += 1
+        j -= 1
+
+    arr[i], arr[right] = arr[right], arr[i]
+
+    return i
+
+
+def trasform_card(arr):
+    mapping = {'11': 'J', '12': 'Q', '13': 'K', '14': 'A'}
+
+    # Trasform from number to 'J', 'Q', 'K', 'A'
+    for idx, card in enumerate(arr):
+        j = 0
+        while j < len(card) and card[j].isdigit():
+            j += 1
+        rank = card[:j]
+        suit = card[j:]
+        if rank in mapping:
+            arr[idx] = mapping[rank] + suit
+
+    return arr 
+
+
+# join part: other parts also
+def run(num_cards):
+    n = check_input(num_cards)
+    if n == 0:
+        return 'Too many cards'
+    length_str = int(num_cards)
+    result =  quicksort(random_cards(check_input(num_cards)), 0, length_str - 1)
+    map_tras = trasform_card(result)
+    return map_tras
+     
+
+with gr.Blocks() as demo:
+    num_cards = gr.Textbox(label="Enter number (1–52)")
+
+    output = gr.Textbox(label="Result", lines=3)
+    submit = gr.Button("Run")
+    
+    submit.click(run, inputs=[num_cards], outputs=[output])
+
+
+demo.launch()
