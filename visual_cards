@@ -1,0 +1,182 @@
+# /Users/artem/Desktop/CISC 121/frontent.py
+import random
+from io import BytesIO
+from PIL import Image
+import gradio as gr
+import matplotlib.pyplot as plt
+from matplotlib.patches import FancyBboxPatch
+import matplotlib.patheffects as pe
+
+custom_theme = gr.themes.Soft(primary_hue="green").set(
+    color_accent="#39FF14",
+)
+
+NEON = "#39FF14"
+BLACK = '#000000'
+
+def make_card(n):
+    # n can come as str from Gradio, ensure int
+    try:
+        n = int(n)
+    except Exception:
+        n = 0
+
+    fig, ax = plt.subplots(figsize=(3, 4), dpi=220)
+    ax.set_facecolor("white")
+    fig.patch.set_facecolor(BLACK)
+
+    width, height = 0.75, 1
+    left, bottom = -width / 2, -height / 2
+    color = NEON
+    card = FancyBboxPatch(
+        (left, bottom), width, height,
+        boxstyle="round,pad=0.08,rounding_size=0.22",
+        fill=False, linewidth=3, edgecolor=color,
+    )
+
+    # glow effect
+    card.set_path_effects([
+        pe.PathPatchEffect(edgecolor=color, linewidth=10, alpha=0.35),
+        pe.Normal(),
+    ])
+
+    ax.add_patch(card)
+
+    ax.text(0, 0.05, str(n),
+            ha="center", va="center",
+            fontsize=30, color=color,
+            fontweight="bold")
+
+    ax.set_xlim(-1.6, 1.6)
+    ax.set_ylim(-2.2, 2.2)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+    return fig  
+
+def check_input(num_cards):
+        num = int(num_cards)   
+        if 1 <= num <= 52:
+            return num
+        else:
+            return 0 
+
+def random_cards(num_cards):
+    arr =[]
+    lst_suits = ["♠", "♥", "♦", "♣"]            
+    for i in range(1, num_cards+1):
+        while True:
+            cards = random.randint(2, 14)
+            # cards = random.randint(2, num_cards)
+            suits_index = random.sample(range(0, 4), 1)[0]
+            suits = lst_suits[suits_index]
+            cards_suits = (str(cards) + suits)
+            if cards_suits not in arr:
+                arr.append(cards_suits)
+                break
+    return arr
+
+
+
+def quicksort(arr, left, right):
+    if left < right:
+        partition_pos = partition(arr, left, right)
+        quicksort(arr, left, partition_pos - 1)
+        quicksort(arr, partition_pos + 1, right)
+    
+    return arr
+
+def rank(card):
+    k = 0
+    while k < len(card) and card[k].isdigit():
+        k += 1
+    return int(card[:k])
+
+def partition(arr, left, right):
+    i = left
+    j = right - 1
+    pivot = arr[right]
+
+    while True:
+        while i <= j and rank(arr[i]) <= rank(pivot):
+            i += 1
+        while j >= i and rank(arr[j]) > rank(pivot):
+            j -= 1
+
+        if i >= j:
+            break
+
+        arr[i], arr[j] = arr[j], arr[i]
+        i += 1
+        j -= 1
+
+    arr[i], arr[right] = arr[right], arr[i]
+
+    return i
+
+
+def trasform_card(arr):
+    mapping = {'11': 'J', '12': 'Q', '13': 'K', '14': 'A'}
+
+    # Trasform from number to 'J', 'Q', 'K', 'A'
+    for idx, card in enumerate(arr):
+        j = 0
+        while j < len(card) and card[j].isdigit():
+            j += 1
+        rank = card[:j]
+        suit = card[j:]
+        if rank in mapping:
+            arr[idx] = mapping[rank] + suit
+
+    return arr 
+
+def unshuffle_card(num_cards):
+    result = check_input(num_cards)
+    return result
+
+# join part: other parts also
+def run(num_cards):
+    n = check_input(num_cards)
+    if n == 0:
+        return 'Too many cards'
+    length_str = int(num_cards)
+    result =  quicksort(random_cards(unshuffle_card), 0, length_str - 1)
+    map_tras = trasform_card(result)
+    return map_tras
+
+# take a look   
+def run(num_cards):
+    n = check_input(num_cards)
+    if n == 0:
+        return "Too many cards", "Too many cards"
+
+    length = int(num_cards)
+    deck = random_cards(length)
+    sorted_deck = quicksort(deck.copy(), 0, length - 1)
+    unsorted_display = trasform_card(deck.copy())
+    sorted_display = trasform_card(sorted_deck.copy())
+    return ", ".join(unsorted_display), ", ".join(sorted_display)
+
+
+if __name__ == '__main__':
+    with gr.Blocks(title="QuickSort  ♠, ♥, ♦, ♣", theme=custom_theme) as demo:
+        with gr.Row():
+            with gr.Column(scale=2):
+                num_cards = gr.Textbox(label='Enter number of cards (1–52)', value='5')
+                submit = gr.Button(value='Shuffle', variant='primary')
+            output_unshuf = gr.Textbox(label="Unsorted Deck", lines=3)
+            output_shuf = gr.Textbox(label="Sorted Deck", lines=3)
+
+        submit.click(run, inputs=[num_cards], outputs=[output_unshuf, output_shuf])
+        
+
+        with gr.Row():
+            slider_n = gr.Slider(1, 52, value=5, step=1, label="Number")
+            plot_preview = gr.Plot(label="Preview")
+            render_btn = gr.Button("Render")
+
+        # update preview when slider changes or button is pressed
+        slider_n.change(make_card, inputs=[slider_n], outputs=[plot_preview])
+        render_btn.click(make_card, inputs=[slider_n], outputs=[plot_preview])
+
+    demo.launch()
