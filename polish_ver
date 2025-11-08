@@ -1,0 +1,284 @@
+# frontent.py
+import random, time
+from io import BytesIO
+from typing import Optional
+
+from PIL import Image
+import gradio as gr
+import matplotlib.pyplot as plt
+from matplotlib.patches import FancyBboxPatch
+import matplotlib.patheffects as pe
+
+custom_theme = gr.themes.Soft(primary_hue="green").set(
+    color_accent="#39FF14",
+)
+
+# Palette
+NEON_GREEN = "#39FF14"
+NEON_RED   = "#FF0000"
+CARD_BG        = "#0F1B2A"   
+CARD_BG_ACTIVE = "#1A0A10"   
+
+def make_card_image(
+    label: str,
+    edge_color: str = NEON_RED,
+    text_color: str = NEON_RED,
+    fill_color: str = CARD_BG,
+    glow: bool = True,
+    glow_width: int = 10,
+    dpi: int = 150
+):
+    fig, ax = plt.subplots(figsize=(1, 2), dpi=dpi)
+    ax.set_facecolor("black")
+    fig.patch.set_facecolor("black")
+
+    # rounded rectangle body
+    w, h = 2, 5.5
+    left, bottom = -w/2, -h/2 + 0.05
+    card = FancyBboxPatch(
+        (left, bottom), w, h,
+        boxstyle="round,pad=0.08,rounding_size=0.22",
+        fill=True, facecolor=fill_color, linewidth=3, edgecolor=edge_color,
+    )
+
+    if glow:
+        card.set_path_effects([
+            pe.PathPatchEffect(edgecolor=edge_color, linewidth=int(glow_width*1.9), alpha=0.20),
+            pe.PathPatchEffect(edgecolor=edge_color, linewidth=int(glow_width*1.3), alpha=0.32),
+            pe.Normal(),
+        ])
+    ax.add_patch(card)
+
+    ax.text(0, 0.05, label, ha="center", va="center",
+            fontsize=15, color=text_color, fontweight="bold")
+
+    # frame/limits
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-2, 2)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+    # export to PIL
+    buf = BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight", pad_inches=0.12)
+    plt.close(fig)
+    buf.seek(0)
+    return Image.open(buf)
+
+_CARD_CACHE = {}
+def get_card_tile(label: str, active: bool):
+    key = (label, active)
+    if key in _CARD_CACHE:
+        return _CARD_CACHE[key]
+
+    if active:
+        img = make_card_image(
+            label,
+            edge_color=NEON_RED,
+            text_color=NEON_RED,
+            fill_color=CARD_BG_ACTIVE,
+            glow=True,
+            glow_width=12,
+            dpi=150
+        )
+    else:
+        img = make_card_image(
+            label,
+            edge_color=NEON_GREEN,
+            text_color=NEON_GREEN,
+            fill_color=CARD_BG,
+            glow=True,
+            glow_width=10,
+            dpi=150
+        )
+    _CARD_CACHE[key] = img
+    return img
+
+def check_input(num_cards):
+        num = int(num_cards)   
+        if 1 <= num <= 52:
+            return num
+        else:
+            return 0 
+
+def random_cards(num_cards):
+    arr =[]
+    lst_suits = ["♠", "♥", "♦", "♣"]            
+    for i in range(1, num_cards+1):
+        while True:
+            cards = random.randint(2, 14)
+            # cards = random.randint(2, num_cards)
+            suits_index = random.sample(range(0, 4), 1)[0]
+            suits = lst_suits[suits_index]
+            cards_suits = (str(cards) + suits)
+            if cards_suits not in arr:
+                arr.append(cards_suits)
+                break
+    return arr
+
+
+def to_face_labels(arr):
+    mapping = {'11': 'J', '12': 'Q', '13': 'K', '14': 'A'}
+
+    # Trasform from number to 'J', 'Q', 'K', 'A'
+    for idx, card in enumerate(arr):
+        j = 0
+        while j < len(card) and card[j].isdigit():
+            j += 1
+        rank = card[:j]
+        suit = card[j:]
+        if rank in mapping:
+            arr[idx] = mapping[rank] + suit
+
+    return arr 
+
+def rank(card_label: str) -> int:
+    face_to_num = {'J': 11, 'Q': 12, 'K': 13, 'A': 14}
+    i = 0
+    while i < len(card_label) and card_label[i].isdigit():
+        i += 1
+    left = card_label[:i] or card_label[0] 
+    return int(left) if left.isdigit() else face_to_num[left]
+
+def _lerp(a, b, t): 
+    return a + (b - a) * t
+
+
+max_row = 20
+
+def _grid_anchors(n_cards, w, h, gap_x, gap_y):
+    anchors = []
+    for i in range(n_cards):
+        row = i // max_row
+        col = i % max_row
+        x = col * (w + gap_x)
+        y = row * (h + gap_y)
+        anchors.append((x, y))
+    rows = (n_cards - 1) // max_row + 1
+    cols = min(n_cards, max_row)
+    total_w = cols * w + (cols - 1) * gap_x
+    total_h = rows * h + (rows - 1) * gap_y
+    return anchors, total_w, total_h
+
+def compose_strip_static(labels, active_indices: Optional[set] = None) -> Image.Image:
+    if active_indices is None:
+        active_indices = set()
+    tiles = [get_card_tile(lbl, active=(i in active_indices)) for i, lbl in enumerate(labels)]
+    w, h = tiles[0].width, tiles[0].height
+    gap_x = int(w * 0.14)
+    gap_y = int(h * 0.10)
+    anchors, total_w, total_h = _grid_anchors(len(tiles), w, h, gap_x, gap_y)
+
+    img = Image.new("RGB", (total_w, total_h), (0, 0, 0))  # canvas bg
+    for (tile, (x, y)) in zip(tiles, anchors):
+        img.paste(tile, (x, y))
+    return img
+
+def compose_strip(labels, from_idx, to_idx, t, active_indices):
+    if active_indices is None:
+        active_indices = set()
+    tiles = [get_card_tile(lbl, active=(i in active_indices or i == from_idx)) 
+             for i, lbl in enumerate(labels)]
+    w, h = tiles[0].width, tiles[0].height
+    gap_x = int(w * 0.14)
+    gap_y = int(h * 0.10)
+    anchors, total_w, total_h = _grid_anchors(len(tiles), w, h, gap_x, gap_y)
+
+    sx, sy = anchors[from_idx]
+    ex, ey = anchors[to_idx]
+    img = Image.new("RGB", (total_w, total_h), (0, 0, 0))
+    for i, (tile, (x, y)) in enumerate(zip(tiles, anchors)):
+        if i == from_idx:
+            mx = int(round(_lerp(sx, ex, t)))
+            my = int(round(_lerp(sy, ey, t)))
+            img.paste(tile, (mx, my))
+        else:
+            img.paste(tile, (x, y))
+    return img
+
+def compose_gallery(labels, active_idx):
+    return [get_card_tile(lbl, active=(i == active_idx)) for i, lbl in enumerate(labels)]
+
+
+def insertion_sort_steps(labels):
+    a = labels[:]  
+    yield a[:], None  
+
+    for i in range(1, len(a)):
+        key = a[i]
+        j = i - 1
+        # Show the key chosen
+        yield a[:], i
+        while j >= 0 and rank(a[j]) > rank(key):
+            a[j + 1] = a[j]
+            yield a[:], j
+            j -= 1
+        a[j + 1] = key
+        yield a[:], j + 1
+
+
+def animate(num_cards: str, delay_ms: int, frames_per_move: int = 10):
+    n = check_input(num_cards)
+    if n == 0:
+        yield make_card_image("Enter 1–52", color=NEON_GREEN)
+        return
+
+    raw = random_cards(n)
+    labels = to_face_labels(raw)[:]  # display labels
+    a = labels[:]                    # working copy
+
+    # initial still
+    yield compose_strip_static(a)
+
+    for i in range(1, len(a)):
+        key = a[i]
+        j = i - 1
+
+        # show the key selection
+        yield compose_strip_static(a, active_indices={i})
+        time.sleep(max(0, delay_ms) / 400.0)
+
+        while j >= 0:
+            yield compose_strip_static(a, active_indices={i, j})
+            time.sleep(max(0, delay_ms) / 400.0)
+
+            if rank(a[j]) > rank(key):
+                j -= 1
+            else:
+                break
+
+        dest = j + 1
+
+        if dest == i:
+            yield compose_strip_static(a, active_indices={i})
+            time.sleep(max(0, delay_ms) / 1000.0)
+            continue
+
+        for f in range(frames_per_move):
+            t = (f + 1) / frames_per_move
+            frame = compose_strip(a, from_idx=i, to_idx=dest, t=t, active_indices={i})
+            yield frame
+            time.sleep(max(0, delay_ms) / 1000.0)
+
+        moved = a.pop(i)
+        a.insert(dest, moved)
+
+        yield compose_strip_static(a, active_indices={dest})
+        time.sleep(max(0, delay_ms) / 1000.0)
+
+
+with gr.Blocks(title="Sorting Cards", theme=custom_theme) as demo:
+    gr.Markdown("QuickSort")
+    with gr.Row():
+        with gr.Column(scale=1):
+            num_cards = gr.Textbox(label="Enter number of cards (1–52)", value="12")
+            delay = gr.Slider(0, 600, value=200, step=25, label="Step delay (ms)")
+            go = gr.Button("Shuffle", variant="primary")
+    with gr.Column(scale=8):
+        canvas = gr.Image(interactive=False, show_label=False)
+    
+    go.click(animate, inputs=[num_cards, delay], outputs=[canvas])
+
+
+if __name__ == "__main__":
+    demo.launch()
