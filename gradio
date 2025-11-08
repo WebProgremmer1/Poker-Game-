@@ -1,0 +1,226 @@
+# frontent.py
+import random, time
+from io import BytesIO
+from typing import List, Iterator, Tuple, Optional
+
+from PIL import Image
+import gradio as gr
+import matplotlib.pyplot as plt
+from matplotlib.patches import FancyBboxPatch
+import matplotlib.patheffects as pe
+
+# ---- Theme ----
+custom_theme = gr.themes.Soft(primary_hue="green").set(
+    color_accent="#39FF14",
+)
+
+NEON_GREEN = "#39FF14"
+NEON_RED   = "#FF375F"   # for the active/moving card
+CARD_BG    = "#0F1B2A"   # interior of the card
+
+# ============ Card rendering (PIL via Matplotlib) ============
+def make_card_image(label: str, color: str = NEON_GREEN, glow: bool = True, dpi: int = 150) -> Image.Image:
+    """Return a PIL image of one card face with a neon border and the given label (e.g., 'K♣', '10♠')."""
+    fig, ax = plt.subplots(figsize=(1, 2), dpi=dpi)
+    ax.set_facecolor("black")
+    fig.patch.set_facecolor("black")
+
+    # rounded rectangle body
+    w, h = 1, 1.5
+    left, bottom = -w/2, -h/2 + 0.05
+    card = FancyBboxPatch(
+        (left, bottom), w, h,
+        boxstyle="round,pad=0.08,rounding_size=0.22",
+        fill=True, facecolor=CARD_BG, linewidth=3, edgecolor=color,
+    )
+    if glow:
+        card.set_path_effects([
+            pe.PathPatchEffect(edgecolor=color, linewidth=10, alpha=0.35),
+            pe.Normal(),
+        ])
+    ax.add_patch(card)
+
+    # center label
+    ax.text(0, 0.05, label, ha="center", va="center",
+            fontsize=15, color=color, fontweight="bold")
+
+
+    #  # frame/limits
+    # ax.set_xlim(-1.6, 1.6)
+    # ax.set_ylim(-2.2, 2.2)
+    # ax.set_aspect("equal")
+    # ax.axis("off")
+    # frame/limits
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1.8, 1.8)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+    # export to PIL
+    buf = BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight", pad_inches=0.12)
+    plt.close(fig)
+    buf.seek(0)
+    return Image.open(buf)
+
+# Simple in-memory cache so we don't redraw the same rank/suit every frame
+_CARD_CACHE = {}
+def get_card_tile(label, active):
+    key = (label, active)
+    if key in _CARD_CACHE:
+        return _CARD_CACHE[key]
+    color = NEON_RED if active else NEON_GREEN
+    img = make_card_image(label, color=color, glow=True)
+    _CARD_CACHE[key] = img
+    return img
+
+# ============ Deck helpers ============
+def check_input(num_cards):
+        num = int(num_cards)   
+        if 1 <= num <= 52:
+            return num
+        else:
+            return 0 
+
+def random_cards(num_cards):
+    arr =[]
+    lst_suits = ["♠", "♥", "♦", "♣"]            
+    for i in range(1, num_cards+1):
+        while True:
+            cards = random.randint(2, 14)
+            # cards = random.randint(2, num_cards)
+            suits_index = random.sample(range(0, 4), 1)[0]
+            suits = lst_suits[suits_index]
+            cards_suits = (str(cards) + suits)
+            if cards_suits not in arr:
+                arr.append(cards_suits)
+                break
+    return arr
+
+
+# def to_face_labels(cards: List[str]) -> List[str]:
+#     """Turn 11/12/13/14 into J/Q/K/A for display, keep suit."""
+#     mapping = {'11': 'J', '12': 'Q', '13': 'K', '14': 'A'}
+#     out = []
+#     for c in cards:
+#         i = 0
+#         while i < len(c) and c[i].isdigit():
+#             i += 1
+#         r, suit = c[:i], c[i:]
+#         out.append((mapping.get(r, r)) + suit)
+#     return out
+
+
+
+def to_face_labels(arr):
+    mapping = {'11': 'J', '12': 'Q', '13': 'K', '14': 'A'}
+
+    # Trasform from number to 'J', 'Q', 'K', 'A'
+    for idx, card in enumerate(arr):
+        j = 0
+        while j < len(card) and card[j].isdigit():
+            j += 1
+        rank = card[:j]
+        suit = card[j:]
+        if rank in mapping:
+            arr[idx] = mapping[rank] + suit
+
+    return arr 
+
+def rank(card_label: str) -> int:
+    """Rank used for sorting. Accepts both raw '11♣' and display 'J♣'."""
+    face_to_num = {'J': 11, 'Q': 12, 'K': 13, 'A': 14}
+    i = 0
+    while i < len(card_label) and card_label[i].isdigit():
+        i += 1
+    left = card_label[:i] or card_label[0]  # handles faces
+    return int(left) if left.isdigit() else face_to_num[left]
+
+# ============ Strip composer ============
+def compose_strip(labels: List[str], active_idx: Optional[int] = None) -> Image.Image:
+    """
+    Build one wide image that shows all cards in a single row.
+    active_idx: the index of the card being compared/moved (highlighted red).
+    """
+    # Build tiles
+    tiles = []
+    for idx, lbl in enumerate(labels):
+        tiles.append(get_card_tile(lbl, active=(idx == active_idx)))
+
+    # Geometry
+    w, h = tiles[0].width, tiles[0].height
+    gap = int(w * 0.14)
+    total_w = w * len(tiles) + gap * (len(tiles) - 1)
+    total_h = h
+    strip = Image.new("RGB", (total_w, total_h), (0, 0, 0))
+
+    # Paste in a row
+    x = 0
+    for t in tiles:
+        strip.paste(t, (x, 0))
+        x += w + gap
+    return strip
+
+def compose_gallery(labels: List[str], active_idx: Optional[int] = None) -> List[Image.Image]:
+    """
+    Build a list of PIL tiles (one per card). The Gallery will auto-wrap.
+    active_idx: index of the highlighted/moving card.
+    """
+    return [get_card_tile(lbl, active=(i == active_idx)) for i, lbl in enumerate(labels)]
+
+# ============ Insertion sort (yields steps) ============
+def insertion_sort_steps(labels: List[str]) -> Iterator[Tuple[List[str], Optional[int]]]:
+    """
+    Generator that yields (current_state, active_idx) at each interesting step.
+    Works directly on display labels.
+    """
+    a = labels[:]  # work on a copy
+    yield a[:], None  # initial state
+
+    for i in range(1, len(a)):
+        key = a[i]
+        j = i - 1
+        # Show the key chosen
+        yield a[:], i
+        # Move larger elements one position ahead
+        while j >= 0 and rank(a[j]) > rank(key):
+            a[j + 1] = a[j]
+            yield a[:], j  # show the shift with j highlighted
+            j -= 1
+        a[j + 1] = key
+        # Show where key landed
+        yield a[:], j + 1
+
+# ============ Gradio callbacks ============
+def animate(num_cards: str, delay_ms: int):
+    n = check_input(num_cards)
+    if n == 0:
+        # show a single placeholder tile in the gallery so size is stable
+        yield compose_gallery(["A♠"], active_idx=None)
+        time.sleep(0.05)
+        yield compose_gallery(["Enter 1–52"], active_idx=None)
+        return
+
+    raw = random_cards(n)
+    labels = to_face_labels(raw)
+
+    for state, active_idx in insertion_sort_steps(labels):
+        tiles = compose_gallery(state, active_idx)
+        yield tiles
+        time.sleep(max(0, delay_ms) / 1000.0)
+
+# ============ UI ============
+with gr.Blocks(title="Sorting Cards – Animated", theme=custom_theme) as demo:
+    gr.Markdown("Quick, clear animation of insertion sort with a single line of cards.")
+    with gr.Row():
+        with gr.Column(scale=1):
+            num_cards = gr.Textbox(label="Enter number of cards (1–52)", value="12")
+            delay = gr.Slider(0, 600, value=200, step=25, label="Step delay (ms)")
+            go = gr.Button("Shuffle", variant="primary")
+    with gr.Column(scale=8):
+        canvas = gr.Gallery(label="Cards", columns=13, preview=False)
+
+    go.click(animate, inputs=[num_cards, delay], outputs=[canvas])
+
+if __name__ == "__main__":
+    demo.launch()
