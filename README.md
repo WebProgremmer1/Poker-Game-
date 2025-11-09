@@ -11,7 +11,7 @@ https://github.com/WebProgremmer1/Poker-Game-/blob/d912586a8906c3f5aca23eb76ce86
 four pillars of computational thinking briefly in bullets)
 
 **Decomposition:**
-The first element + 1 compares with the first element. If the first element is bigger than the next one, it swaps. If the second is smaller than it stays on its position. In both ways, we repeat the process but with the next elements. We compare the third element with second if smaller than with first. If not, it stays on position between previous first and second position.  The process repeats until the list is sorted. <\n>
+The first element + 1 compares with the first element. If the first element is bigger than the next one, it swaps. If the second is smaller than it stays on its position. In both ways, we repeat the process but with the next elements. We compare the third element with second if smaller than with first. If not, it stays on position between previous first and second position.  The process repeats until the list is sorted. 
 
 **Pattern Recognition:**
 Repeating process, if the element is higher it swaps, if the element is smaller than it stay unchanged.
@@ -32,7 +32,9 @@ In case of Gradio implementation, the user sees unsorted cards in the array way.
 ![image alt](https://github.com/WebProgremmer1/Poker-Game-/blob/d912586a8906c3f5aca23eb76ce86b44e6f19420/flowchart4.png)
 ## Steps to Run
 Local run: Copy link http://127.0.0.1:7860. The program will be opened in the browser. User can choose to manage enter number in range of 1 to 52. Also, user can manage step dalay from 0 to 600 ms. Program will generate some amount of cards and user can tap icon of full screen. It will open cards in full screen format. 
+
 ## Hugging Face Link
 https://huggingface.co/spaces/HeyPeople2025/Poker_Game
+
 ## Author & Acknowledgment
 I decided to present this project in cards format because I think it is really cool implementation. It makes the program more engaging and entertainment then I would present Insertion Sort as lists. 
