@@ -7,7 +7,7 @@ Insertion Algorithm
 ![image alt](https://github.com/WebProgremmer1/Poker-Game-/blob/d912586a8906c3f5aca23eb76ce86b44e6f19420/test.png)
 ![image alt](https://github.com/WebProgremmer1/Poker-Game-/blob/9d952c2fc651f1fecf4174ecb0ace7990255edac/visual.png)
 [![Watch demo](https://img.shields.io/badge/▶️%20Watch%20Demo-blue)](https://github.com/user-attachments/assets/310ad20c-eaeb-43d4-a5ee-8d86ab988259)
-
+<video src="https://github.com/user-attachments/assets/310ad20c-eaeb-43d4-a5ee-8d86ab988259" controls width="600"></video>
 ## Problem Breakdown & Computational Thinking (You can add a flowchart and write the
 four pillars of computational thinking briefly in bullets)
 
