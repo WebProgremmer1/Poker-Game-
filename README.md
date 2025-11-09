@@ -4,8 +4,9 @@ Python project showing insertion sort in playtful way with using cards concept
 # Algorithm Name
 Insertion Algorithm 
 ## Demo video/gif/screenshot of test
-https://github.com/user-attachments/assets/5a682828-fdfb-42d4-bbf3-9299f73c8ee3
-https://github.com/user-attachments/assets/a86fbe26-17ab-48d2-858c-e4ac41503a53 
+https://github.com/user-attachments/assets/310ad20c-eaeb-43d4-a5ee-8d86ab988259
+https://github.com/WebProgremmer1/Poker-Game-/blob/d912586a8906c3f5aca23eb76ce86b44e6f19420/test.png
+
 ## Problem Breakdown & Computational Thinking (You can add a flowchart and write the
 four pillars of computational thinking briefly in bullets)
 
@@ -20,11 +21,10 @@ Input: The input is number from 1 to 52 because in the desk there is only 52 car
 Processing: The first step is to check if the input satisfies our condition. This number is really from range 1 to 52. The second step is randomizing amount of cards that user put into program.  The third step is to use a sorting algorithm to sort the numbers from smallest to highest. The fourth step is to add suit to the card. I have shown backend part. 
 In case of Gradio implementation, the user sees unsorted cards in the array way. The program is showing sort process in the real time. 
 **Flowcharts
-https://github.com/user-attachments/assets/a8397d92-b8a7-4acb-bb7a-f701b7615e42
-https://github.com/user-attachments/assets/b0f2f9d9-4a7a-44c7-80d8-39a011dc1f11
-https://github.com/user-attachments/assets/c44d9682-8f98-4405-83bb-681682414ac3
-https://github.com/user-attachments/assets/8e76dd11-8d52-4f7a-8bad-360c76114138
-
+https://github.com/WebProgremmer1/Poker-Game-/blob/d912586a8906c3f5aca23eb76ce86b44e6f19420/flowchart1.png
+https://github.com/WebProgremmer1/Poker-Game-/blob/d912586a8906c3f5aca23eb76ce86b44e6f19420/flowchart2.png
+https://github.com/WebProgremmer1/Poker-Game-/blob/d912586a8906c3f5aca23eb76ce86b44e6f19420/flowchart3.png
+https://github.com/WebProgremmer1/Poker-Game-/blob/d912586a8906c3f5aca23eb76ce86b44e6f19420/flowchart4.png
 ## Steps to Run
 Local run: Copy link http://127.0.0.1:7860. The program will be opened in the browser. User can choose to manage enter number in range of 1 to 52. Also, user can manage step dalay from 0 to 600 ms. Program will generate some amount of cards and user can tap icon of full screen. It will open cards in full screen format. 
 ## Hugging Face Link
