@@ -1,5 +1,5 @@
 # Poker-Game-
-Python project showing quicksort in playtful way with using cards concept 
+Python project showing insertion sort in playtful way with using cards concept 
 
 # Algorithm Name
 Insertion Algorithm 
