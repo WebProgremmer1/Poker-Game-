@@ -10,7 +10,7 @@ https://github.com/WebProgremmer1/Poker-Game-/blob/d912586a8906c3f5aca23eb76ce86
 ## Problem Breakdown & Computational Thinking (You can add a flowchart and write the
 four pillars of computational thinking briefly in bullets)
 
-**Decomposition: 
+**Decomposition:**
 The first element + 1 compares with the first element. If the first element is bigger than the next one, it swaps. If the second is smaller than it stays on its position. In both ways, we repeat the process but with the next elements. We compare the third element with second if smaller than with first. If not, it stays on position between previous first and second position.  The process repeats until the list is sorted. 
 **Pattern Recognition:
 Repeating process, if the element is higher it swaps, if the element is smaller than it stay unchanged.
