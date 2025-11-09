@@ -1,0 +1,7 @@
+gradio
+matplotlib
+pillow
+typing
+io
+random
+time
