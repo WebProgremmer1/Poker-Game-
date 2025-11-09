@@ -83,11 +83,13 @@ def get_card_tile(label: str, active: bool):
 
 
 def check_input(num_cards):
-    n = int(num_cards)
-    if 1 <= n <= 52:
-        return n
-    return 0
-
+    try: 
+        n = int(num_cards)
+        if 1 <= n <= 52:
+            return n
+        return 0
+    except ValueError:
+        return 0
 
 def random_cards(num_cards):
     arr = []
