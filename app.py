@@ -233,7 +233,7 @@ def animate(num_cards: str, delay_ms: int, frames_per_move: int = 10):
 
 
 with gr.Blocks(title="Sorting Cards", theme=custom_theme) as demo:
-    gr.Markdown("Invertion Sort")
+    gr.Markdown("Insertion Sort")
     with gr.Row():
         with gr.Column(scale=1):
             num_cards = gr.Textbox(label="Enter number of cards (1–52)", value="12")
